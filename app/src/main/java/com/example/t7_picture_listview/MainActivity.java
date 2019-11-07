@@ -1,12 +1,16 @@
 package com.example.t7_picture_listview;
 
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.room.Room;
 
 import android.content.Context;
+import android.content.Entity;
 import android.graphics.Color;
 import android.net.ConnectivityManager;
 import android.net.Network;
+import android.os.AsyncTask;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
@@ -24,6 +28,7 @@ import com.google.gson.Gson;
 import org.json.JSONException;
 import org.json.JSONObject;
 import java.util.ArrayList;
+import java.util.List;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -34,6 +39,9 @@ public class MainActivity extends AppCompatActivity {
     private EditText searchText;
     private ArrayList<Picture> lista = new ArrayList<>();
     private ownAdapter adapter;
+    tietokanta db;
+    String DB_NAME="MyDB";
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -63,6 +71,11 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
+        db = Room.databaseBuilder(getApplicationContext(),
+                tietokanta.class, DB_NAME).fallbackToDestructiveMigration().build();
+
+
+
         LinearLayout toolb = findViewById(R.id.toolbar);
         toolb.setBackgroundColor(Color.GRAY);
 
@@ -80,6 +93,7 @@ public class MainActivity extends AppCompatActivity {
             Toast.makeText(context, "No network available.", Toast.LENGTH_SHORT).show();
         }
     }
+
     private void doJsonQuery(String tag) {
         if (queue == null) {
             queue = Volley.newRequestQueue(this);
@@ -96,6 +110,7 @@ public class MainActivity extends AppCompatActivity {
                         } catch (JSONException e) {
                             searchText.setText(e.toString());
                             e.printStackTrace();
+
                         }
                     }
                 },
@@ -107,6 +122,8 @@ public class MainActivity extends AppCompatActivity {
                 });
         queue.add(jsonObjectRequest);
     }
+
+
     public void getDataFromResponse (JSONObject response) throws JSONException {
 
         Gson gson = new Gson();
@@ -117,6 +134,50 @@ public class MainActivity extends AppCompatActivity {
         adapter.notifyDataSetChanged();
 
         Toast.makeText(context, "Data loaded", Toast.LENGTH_SHORT).show();
+    }
+
+    private class InsertTask extends AsyncTask<Picture,Integer,Integer> {
+
+        @Override
+        protected Integer doInBackground(Picture... entity) {
+            db.myTableDao().InsertEntity(entity);
+            return null;
+        }
+
+        @Override
+        protected void onPreExecute() {
+            super.onPreExecute();
+        }
+
+        @Override
+        protected void onPostExecute(Integer result) {
+            super.onPostExecute(result);
+            Log.d("InsertTask","One Row Inserted");
+
+            SelectAsyncTask selectAsyncTask=new SelectAsyncTask();
+            selectAsyncTask.execute();
+        }
+    }
+
+    private class SelectAsyncTask extends AsyncTask<Void,Integer, List<Picture>> {
+
+        @Override
+        protected List<Picture> doInBackground(Void... voids) {
+            return db.myTableDao().getAllInDescendingOrder();
+        }
+
+        @Override
+        protected void onPreExecute() {
+            super.onPreExecute();
+        }
+
+        @Override
+        protected void onPostExecute(List<Picture> profileEntities) {
+            super.onPostExecute(profileEntities);
+            Log.d("Select",profileEntities.size()+" row found");
+            adapter.setData(profileEntities);
+            adapter.notifyDataSetChanged();
+        }
     }
 
     private boolean testInternet(Context context) {

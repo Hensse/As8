@@ -15,6 +15,7 @@ import android.widget.TextView;
 import com.squareup.picasso.Picasso;
 import java.io.InputStream;
 import java.util.ArrayList;
+import java.util.List;
 
 public class ownAdapter extends ArrayAdapter<Picture> {
 
@@ -34,6 +35,10 @@ public class ownAdapter extends ArrayAdapter<Picture> {
         TextView text;
         TextView text2;
         ImageView image;
+    }
+
+    public void setData(List<Picture> itemList) {
+        this.itemList= (ArrayList<Picture>) itemList;
     }
 
     @Override
@@ -63,16 +68,23 @@ public class ownAdapter extends ArrayAdapter<Picture> {
         //Toteutus picassolla ja pois kommentoituna Asynctaskin avulla.
 
         Picasso.get().load(itemList.get(position).getUrl()).into(viewHolder.image);
+
         //new DownloadImageTask(viewHolder.image).execute(itemList.get(position).getUrl());
 
         return convertView;
 
     }
-    /*
+
+    // Vaihtoehtoinen tapa hakea kuva
     private class DownloadImageTask extends AsyncTask<String, Void, Bitmap> {
         ImageView bmImage;
         public DownloadImageTask(ImageView bmImage) {
             this.bmImage = bmImage;
+        }
+
+        @Override
+        protected void onProgressUpdate(Void... values) {
+            super.onProgressUpdate(values);
         }
 
         protected Bitmap doInBackground(String... urls) {
@@ -90,5 +102,5 @@ public class ownAdapter extends ArrayAdapter<Picture> {
         protected void onPostExecute(Bitmap result) {
             bmImage.setImageBitmap(result);
         }
-    }*/
+    }
 }
